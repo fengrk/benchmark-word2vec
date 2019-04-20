@@ -145,8 +145,8 @@ class FaissBenchmark(BasicBenchmark):
             """ 向量搜索 """
             length = feature_list.shape[0]
             distance_list, indices = self._model.search(feature_list, self.similar_top_n + 1)
-            distance_list = distance_list.reshape((length, self.similar_top_n))
-            indices = indices.reshape((length, self.similar_top_n))
+            distance_list = distance_list.reshape((length, self.similar_top_n + 1))
+            indices = indices.reshape((length, self.similar_top_n + 1))
 
             return distance_list, indices
 
