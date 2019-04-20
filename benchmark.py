@@ -144,11 +144,7 @@ class FaissBenchmark(BasicBenchmark):
         def search_by_vec(feature_list, ):
             """ 向量搜索 """
             length = feature_list.shape[0]
-
-            time_start = time.time()
-            distance_list, indices = self._model.search(feature_list, self.similar_top_n)
-            self.logger.info("cost {}s to search {} feature".format(time.time() - time_start, length))
-
+            distance_list, indices = self._model.search(feature_list, self.similar_top_n + 1)
             distance_list = distance_list.reshape((length, self.similar_top_n))
             indices = indices.reshape((length, self.similar_top_n))
 
@@ -165,7 +161,7 @@ class FaissBenchmark(BasicBenchmark):
 
         # show result
         for i, word in enumerate(word_list):
-            result = ", ".join([self._word_detail_info[0][word_index] for word_index in indices_arr[i]])
+            result = ", ".join([self._word_detail_info[0][word_index] for word_index in indices_arr[i][1:]])
             self.save_result_dict(word, result)
 
 
