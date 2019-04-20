@@ -5,11 +5,11 @@ import bz2
 import logging
 import pickle
 import time
-from pyxtools import global_init_logger
 
 import gensim
 import numpy as np
 import os
+from pyxtools import global_init_logger
 from pyxtools.faiss_tools import faiss
 
 word_vec_model_file = "vec.model"
@@ -115,17 +115,18 @@ class FaissBenchmark(BasicBenchmark):
         feature = np.zeros(shape=(model_size, self.dimension), dtype=np.float32)
         word_list = [word for word in gensim_model.vocab]
         for i, word in enumerate(word_list):
-            feature[i] = gensim_model.get_vector(word)
+            feature[i] = gensim_model.get_vector(word)  # not normed
         self.logger.info("success to load index! Cost {} seconds!".format(time.time() - time_start))
 
         # train faiss index
         index_factory = "Flat"
+        normed_feature = feature / np.linalg.norm(feature, axis=1, keepdims=True)
         faiss_index = faiss.index_factory(self.dimension, index_factory)
         self.logger.info("training index...")
         time_start = time.time()
-        faiss_index.train(feature)  # nb * d
+        faiss_index.train(normed_feature)  # nb * d
         self.logger.info("success to train index! Cost {} seconds!".format(time.time() - time_start))
-        faiss_index.add(feature)
+        faiss_index.add(normed_feature)
 
         # save in file
         faiss.write_index(faiss_index, self.faiss_index_file)
@@ -143,8 +144,9 @@ class FaissBenchmark(BasicBenchmark):
 
         def search_by_vec(feature_list, ):
             """ 向量搜索 """
-            length = feature_list.shape[0]
-            distance_list, indices = self._model.search(feature_list, self.similar_top_n + 1)
+            normed_feature_list = feature_list / np.linalg.norm(feature_list, axis=1, keepdims=True)
+            length = normed_feature_list.shape[0]
+            distance_list, indices = self._model.search(normed_feature_list, self.similar_top_n + 1)
             distance_list = distance_list.reshape((length, self.similar_top_n + 1))
             indices = indices.reshape((length, self.similar_top_n + 1))
 
