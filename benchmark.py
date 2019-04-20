@@ -5,7 +5,7 @@ import bz2
 import logging
 import pickle
 import time
-from pyxtools import global_init_logger,
+from pyxtools import global_init_logger
 
 import gensim
 import numpy as np
