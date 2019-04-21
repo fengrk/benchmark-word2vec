@@ -12,28 +12,32 @@ import os
 from pyxtools import global_init_logger
 from pyxtools.faiss_tools import faiss
 
-word_vec_model_file = "vec.model"
-if not os.path.exists(word_vec_model_file):
-    with open(word_vec_model_file, "wb") as fw:
-        with bz2.BZ2File('./sgns.sikuquanshu.word.bz2', 'rb') as fr:
-            fw.write(fr.read())
-
 
 class BasicBenchmark(object):
     """ Basic Class """
 
     def __init__(self, similar_top_n: int = 20):
+        """ init """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.similar_top_n = similar_top_n
         self.dimension = 300
         self.result_dict = {}
+        self.word_vec_model_file = "vec.model"
 
     def prepare(self):
         """ 准备工作 """
-        pass
+        self._global_prepare()
+
+    def _global_prepare(self):
+        """  """
+        if not os.path.exists(self.word_vec_model_file):
+            with open(self.word_vec_model_file, "wb") as fw:
+                with bz2.BZ2File('./sgns.sikuquanshu.word.bz2', 'rb') as fr:
+                    fw.write(fr.read())
 
     @staticmethod
     def get_word_list() -> [str]:
+        """ 测试词 """
         return ["计", "算", "机", "词", "向", "量", "囧"]
 
     def run(self):
@@ -71,6 +75,10 @@ class BasicBenchmark(object):
             if result not in result_list:
                 self.result_dict[word].append(result)
 
+    def load_pre_trained_model(self, ):
+        """ 返回预训练好的模型 """
+        return gensim.models.KeyedVectors.load_word2vec_format(self.word_vec_model_file, binary=False)
+
 
 class GensimBenchmark(BasicBenchmark):
     """ Gensim """
@@ -80,7 +88,7 @@ class GensimBenchmark(BasicBenchmark):
         self._model = None
 
     def init(self):
-        self._model = gensim.models.KeyedVectors.load_word2vec_format(word_vec_model_file, binary=False)
+        self._model = self.load_pre_trained_model()
 
     def search(self):
         for word in self.get_word_list():
@@ -109,7 +117,7 @@ class FaissBenchmark(BasicBenchmark):
         # load model to dict
         self.logger.info("loading model...")
         time_start = time.time()
-        gensim_model = gensim.models.KeyedVectors.load_word2vec_format(word_vec_model_file, binary=False)
+        gensim_model = self.load_pre_trained_model()
         model_size = len(gensim_model.vocab)
         assert self.dimension == gensim_model.vector_size
         feature = np.zeros(shape=(model_size, self.dimension), dtype=np.float32)
@@ -126,7 +134,6 @@ class FaissBenchmark(BasicBenchmark):
         time_start = time.time()
         faiss_index.train(normed_feature)  # nb * d
         self.logger.info("success to train index! Cost {} seconds!".format(time.time() - time_start))
-        faiss_index.add(normed_feature)
 
         # save in file
         faiss.write_index(faiss_index, self.faiss_index_file)
