@@ -7,7 +7,7 @@
 
 当模型的词规模在百万级以上时, 调用一次`similar_by_word`, 耗时过长. 如6M大小的模型, 查询单个词的近义词, 耗时约0.35s.
 
-实际项目中, 需要降低检索的耗时. 其中一个解决方案, 便是使用[faiss]()来实现`similar_by_word`. 
+实际项目中, 需要降低检索的耗时. 其中一个解决方案, 便是使用[faiss](https://github.com/facebookresearch/faiss)来实现`similar_by_word`. 
 
 本项目, 简单对比`gensim`与`faiss`在查找近义词方面的性能.
 
