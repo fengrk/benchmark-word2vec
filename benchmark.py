@@ -1,6 +1,13 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
+"""
+词向量测试 20K
 
+词向量:
+- 规模: 19527 x 300D
+- 来源: [Chinese-Word-Vectors: sgns.sikuquanshu.word.bz2](https://github.com/Embedding/Chinese-Word-Vectors)
+
+"""
 import bz2
 import logging
 import pickle
@@ -20,7 +27,7 @@ class BasicBenchmark(object):
         """ init """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.similar_top_n = similar_top_n
-        self.dimension = 300
+        self.dimension = None
         self.result_dict = {}
         self.word_vec_model_file = "vec.model"
 
@@ -77,7 +84,9 @@ class BasicBenchmark(object):
 
     def load_pre_trained_model(self, ):
         """ 返回预训练好的模型 """
-        return gensim.models.KeyedVectors.load_word2vec_format(self.word_vec_model_file, binary=False)
+        gensim_model = gensim.models.KeyedVectors.load_word2vec_format(self.word_vec_model_file, binary=False)
+        self.dimension = gensim_model.vector_size
+        return gensim_model
 
 
 class GensimBenchmark(BasicBenchmark):
@@ -119,7 +128,7 @@ class FaissBenchmark(BasicBenchmark):
         time_start = time.time()
         gensim_model = self.load_pre_trained_model()
         model_size = len(gensim_model.vocab)
-        assert self.dimension == gensim_model.vector_size
+        self.dimension = gensim_model.vector_size
         feature = np.zeros(shape=(model_size, self.dimension), dtype=np.float32)
         word_list = [word for word in gensim_model.vocab]
         for i, word in enumerate(word_list):
@@ -134,6 +143,7 @@ class FaissBenchmark(BasicBenchmark):
         time_start = time.time()
         faiss_index.train(normed_feature)  # nb * d
         self.logger.info("success to train index! Cost {} seconds!".format(time.time() - time_start))
+        faiss_index.add(normed_feature)
 
         # save in file
         faiss.write_index(faiss_index, self.faiss_index_file)
