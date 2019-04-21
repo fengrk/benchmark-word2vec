@@ -175,8 +175,8 @@ class FaissBenchmark(BasicBenchmark):
         self.logger.info("training index...")
         time_start = time.time()
         faiss_index.train(normed_feature)  # nb * d
-        self.logger.info("success to train index! Cost {} seconds!".format(time.time() - time_start))
         faiss_index.add(normed_feature)
+        self.logger.info("success to train index! Cost {} seconds!".format(time.time() - time_start))
 
         # save in file
         faiss.write_index(faiss_index, self.faiss_index_file)
