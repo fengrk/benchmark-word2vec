@@ -1,11 +1,16 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
+
 """
 词向量测试 20K
 
 词向量:
 - 规模: 19527 x 300D
 - 来源: [Chinese-Word-Vectors: sgns.sikuquanshu.word.bz2](https://github.com/Embedding/Chinese-Word-Vectors)
+
+测试结果:
+- faiss: load index, 0.82s; search 100 times, 1.05s
+- gensim: load index, 5.80s; search 100 times, 1.83s
 
 """
 import bz2
@@ -155,6 +160,7 @@ class FaissBenchmark(BasicBenchmark):
         self._model = faiss.read_index(self.faiss_index_file)
         with open(self.faiss_index_detail_pkl, "rb") as f:
             self._word_detail_info = pickle.load(f)
+            self.dimension = self._word_detail_info[1].shape[-1]
 
     def search(self):
         """ search similar words """

@@ -1,9 +1,15 @@
 # -*- coding:utf-8 -*-
 """
-    百万词向量测试
-    词库信息:
-        - 大小: 6115353 x 64D
-        - 来源:
+词向量测试 6M
+
+词向量:
+- 规模: 6115353 x 64D
+- 来源:
+
+测试结果:
+- faiss: load index, 31.92s; search 100 times, 228.31s
+- gensim: load index, 208.36s; search 100 times, 404.22s
+
 """
 from __future__ import absolute_import
 
