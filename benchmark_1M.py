@@ -59,5 +59,5 @@ if __name__ == '__main__':
     global_init_logger()
 
     # benchmark
-    for method_cls in [FaissBenchmark1M, GensimBenchmark1M, ]:
+    for method_cls in [FaissBenchmark1M, ]:
         method_cls().run()

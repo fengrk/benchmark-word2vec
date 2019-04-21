@@ -21,7 +21,7 @@ import time
 import gensim
 import numpy as np
 import os
-from pyxtools import global_init_logger
+from pyxtools import global_init_logger, TimeCostHelper
 from pyxtools.faiss_tools import faiss
 
 
@@ -64,7 +64,7 @@ class BasicBenchmark(object):
 
         # search similar words
         time_start = time.time()
-        for i in range(100):
+        for i in range(1):
             self.search()
 
         for word in self.get_word_list():
@@ -72,12 +72,12 @@ class BasicBenchmark(object):
             self.logger.info("{}>>\n{}".format(
                 word, "\n".join([result for result in result_list])
             ))
-        self.logger.info("Search 100 times by word: cost {} s!".format(time.time() - time_start))
+        self.logger.info("Search 1 times by word: cost {} s!".format(time.time() - time_start))
 
         # search similar words by vec
         self.result_dict.clear()
         time_start = time.time()
-        for i in range(100):
+        for i in range(1):
             self.vec_search()
 
         for word in self.get_word_list():
@@ -85,7 +85,7 @@ class BasicBenchmark(object):
             self.logger.info("{}>>\n{}".format(
                 word, "\n".join([result for result in result_list])
             ))
-        self.logger.info("Search 100 times by vec: cost {} s!".format(time.time() - time_start))
+        self.logger.info("Search 1 times by vec: cost {} s!".format(time.time() - time_start))
 
     def init(self):
         raise NotImplementedError
@@ -195,11 +195,19 @@ class FaissBenchmark(BasicBenchmark):
 
     def _search_by_vec(self, feature_list, ):
         """ 向量搜索 """
+        time_manager = TimeCostHelper()
         normed_feature_list = feature_list / np.linalg.norm(feature_list, axis=1, keepdims=True)
         length = normed_feature_list.shape[0]
+        time_manager.dot("_search_by_vec, normed feature , time cost {}s")
+
         distance_list, indices = self._model.search(normed_feature_list, self.similar_top_n + 1)
+        time_manager.dot("_search_by_vec, search , time cost {}s")
+
         distance_list = distance_list.reshape((length, self.similar_top_n + 1))
         indices = indices.reshape((length, self.similar_top_n + 1))
+        time_manager.dot("_search_by_vec, reshape , time cost {}s")
+
+        time_manager.sum("_search_by_vec, total time cost {}s")
 
         return distance_list, indices
 
@@ -222,18 +230,24 @@ class FaissBenchmark(BasicBenchmark):
     def vec_search(self):
         """ 直接使用词向量搜索 """
         # 获取查询词向量
+        time_manager = TimeCostHelper()
         word_list = self.get_word_list()
         word_feature_list = np.zeros(shape=(len(word_list), self.dimension), dtype=np.float32)
         for i, word in enumerate(word_list):
             word_feature_list[i] = self._word_vec_dict[word]
+        time_manager.dot(info_format="get vec, time cost {}s")
 
         # search
         _, indices_arr = self._search_by_vec(word_feature_list)
+        time_manager.dot(info_format="search by vec, time cost {}s")
 
         # show result
         for i, word in enumerate(word_list):
             result = ", ".join([self._word_detail_info[0][word_index] for word_index in indices_arr[i][1:]])
             self.save_result_dict(word, result)
+        time_manager.dot("get result, time cost {}s")
+
+        time_manager.sum("vec search, time cost {}s")
 
 
 if __name__ == '__main__':
@@ -241,5 +255,5 @@ if __name__ == '__main__':
     global_init_logger()
 
     # benchmark
-    for method_cls in [FaissBenchmark, GensimBenchmark, ]:
+    for method_cls in [FaissBenchmark, ]:
         method_cls().run()
