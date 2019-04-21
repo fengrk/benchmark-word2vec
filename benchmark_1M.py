@@ -25,7 +25,8 @@ docker logs -f $(docker run -d benchmark:latest)
 ```
 
 测试结果:
-- faiss: load index, 31.92s; search 100 times by word, 209.59s; search 100 times by vec, 215.94s
+- faiss[Flat]: load index, 31.92s; search 100 times by word, 209.59s; search 100 times by vec, 215.94s
+- faiss[IMI2x10,Flat; nprobe=8192]: load index, 53.94s; search 100 times by word, 4.36s; search 100 times by vec, 4.22s
 - gensim: load index, 208.36s; search 100 times by word, 394.81s; search 100 times by vec, 423.10s
 
 """
@@ -77,7 +78,7 @@ class FaissBenchmark1M(Mixin, FaissBenchmark):
 
         # faiss setting
         self._faiss_factory = "IMI2x10,Flat"
-        self.n_probe = 8096
+        self.n_probe = 8192
 
     def prepare(self):
         """ 将Gensim 版本的模型转化为Faiss模型 """
