@@ -15,6 +15,14 @@
 - IMI2x10,Flat: 聚类分桶->存储原始向量. index文件大小 1.6GB; 训练+存储 197.05s; 加载index 43.22s; 搜索词列表1次耗时 0.004s; 准确度低
     例如: 未来 >> 重要, 有利, 重视, 看重, 可靠, 心就行, 誉比, 丰厚, 有价值, 而且, 优厚, 低廉, 高圳气, 高圳气, 高圳气, 高圳气, 高圳气, 高圳气, 高圳气, 高圳气
 
+    修改nprobe:
+        - 1, 0.3s
+        - 8, 0.04s
+        - 32, 0.005s
+        - 256, 0.008s, 准确率可以接受
+        - 1024, 0.016s
+        - 2048, 0.028s
+        - 8196, 0.045s, 准确率非常高, 基本等同于gensim
 """
 from __future__ import absolute_import
 
@@ -71,6 +79,7 @@ class FaissBenchmark1M(Mixin, FaissBenchmark):
         self.faiss_index_file = "./faiss_1m.index"
         self.faiss_index_detail_pkl = "./faiss_1m.pkl"
         self.dimension = 64
+        self.n_probe = 1
 
     def prepare(self):
         """ 将Gensim 版本的模型转化为Faiss模型 """
@@ -93,7 +102,7 @@ class FaissBenchmark1M(Mixin, FaissBenchmark):
         self.logger.info("success to load index! Cost {} seconds!".format(time.time() - time_start))
 
         # train faiss index
-        index_factory = "IVF16384,Flat"
+        index_factory = "IMI2x10,Flat"
         normed_feature = feature / np.linalg.norm(feature, axis=1, keepdims=True)
         faiss_index = faiss.index_factory(self.dimension, index_factory)
         self.logger.info("training index...")
@@ -107,11 +116,27 @@ class FaissBenchmark1M(Mixin, FaissBenchmark):
         with open(self.faiss_index_detail_pkl, "wb") as f:
             pickle.dump((word_list, feature), f)
 
+    def search(self):
+        """ search similar words """
+        self._model.nprobe = self.n_probe
+        super(FaissBenchmark1M, self).search()
+
+    def vec_search(self):
+        """ 直接使用词向量搜索 """
+        self._model.nprobe = self.n_probe
+        super(FaissBenchmark1M, self).vec_search()
+
 
 if __name__ == '__main__':
     # global logger
     global_init_logger()
 
     # benchmark
-    for method_cls in [FaissBenchmark1M, ]:
+    for method_cls in [GensimBenchmark1M]:
         method_cls().run()
+
+    faiss_obj = FaissBenchmark1M()
+    for n_probe in [1, 8, 32, 256, 1024, 2048, 8196]:
+        faiss_obj.logger.info("Next>>\n\n\nn_probe is {}".format(n_probe))
+        faiss_obj.n_probe = n_probe
+        faiss_obj.run()
