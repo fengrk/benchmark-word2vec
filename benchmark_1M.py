@@ -7,8 +7,8 @@
 - 来源:
 
 测试结果:
-- faiss: load index, 31.92s; search 100 times, 228.31s
-- gensim: load index, 208.36s; search 100 times, 404.22s
+- faiss: load index, 31.92s; search 100 times by word, 209.59s; search 100 times by vec, 215.94s
+- gensim: load index, 208.36s; search 100 times by word, 394.81s; search 100 times by vec, 423.10s
 
 """
 from __future__ import absolute_import
