@@ -29,11 +29,19 @@ from pyxtools.faiss_tools import faiss
 
 from benchmark import FaissBenchmark, GensimBenchmark
 
+word_vec_pkl = "./big.pkl"
+
 
 class Mixin(object):
     def load_pre_trained_model(self, ):
         """ 返回预训练好的模型 """
-        return gensim.models.KeyedVectors.load_word2vec_format(self.word_vec_model_file, binary=True)
+        if not os.path.exists(word_vec_pkl):
+            model = gensim.models.KeyedVectors.load_word2vec_format(self.word_vec_model_file, binary=True)
+            with open(word_vec_pkl, "wb") as fw:
+                pickle.dump(model, fw)
+
+        with open(word_vec_pkl, "rb") as fr:
+            return pickle.load(fr)
 
     def _global_prepare(self):
         """  """
@@ -85,7 +93,7 @@ class FaissBenchmark1M(Mixin, FaissBenchmark):
         self.logger.info("success to load index! Cost {} seconds!".format(time.time() - time_start))
 
         # train faiss index
-        index_factory = "IMI2x10,Flat"
+        index_factory = "IVF16384,Flat"
         normed_feature = feature / np.linalg.norm(feature, axis=1, keepdims=True)
         faiss_index = faiss.index_factory(self.dimension, index_factory)
         self.logger.info("training index...")
